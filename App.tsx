@@ -70,7 +70,7 @@ const downloadBillAsText = async (
   formData.append('file', blob, filename);
 
   try {
-    const response = await fetch('http://localhost:5000/upload', {
+    const response = await fetch('/.netlify/functions/upload', {
       method: 'POST',
       body: formData,
     });

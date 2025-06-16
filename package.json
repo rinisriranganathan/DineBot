@@ -1,5 +1,5 @@
 {
-  "name": "culinary-genie:-fire-&-froast-suggestions",
+  "name": "culinary-genie-fire-froast",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -19,7 +19,7 @@
     "react-speech-recognition": "^4.0.1",
     "react-webcam": "^7.2.0",
     "react-wrap-balancer": "^1.1.1",
-    "xlsx": "0.18.5"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
