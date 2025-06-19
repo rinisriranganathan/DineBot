@@ -4,7 +4,7 @@ const path = require("path");
 exports.handler = async (event) => {
   const bill = JSON.parse(event.body);
 
-  const filePath = path.join("/tmp", `latest.json`);
+  const filePath = path.join("/tmp", `latest.txt`);
   fs.writeFileSync(filePath, JSON.stringify(bill, null, 2));
 
   return {
