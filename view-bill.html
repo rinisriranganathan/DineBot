@@ -1,22 +1,20 @@
-<!-- public/view-bill.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Your Bill</title>
 </head>
 <body>
   <h1>Your Bill</h1>
-  <div id="billContainer">Loading...</div>
+  <pre id="bill">Loading...</pre>
   <script>
-    const id = new URLSearchParams(window.location.search).get('id');
-    fetch(`/.netlify/functions/getBill?id=${id}`)
+    fetch(`/.netlify/functions/getBill`)
       .then(res => res.json())
       .then(data => {
-        document.getElementById('billContainer').innerText = JSON.stringify(data, null, 2);
+        document.getElementById('bill').textContent = JSON.stringify(data, null, 2);
       })
       .catch(() => {
-        document.getElementById('billContainer').innerText = "Bill not found or expired.";
+        document.getElementById('bill').textContent = "Bill not found or expired.";
       });
   </script>
 </body>
