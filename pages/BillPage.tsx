@@ -37,13 +37,6 @@ const BillPage: React.FC<BillPageProps> = ({ orderData, onConfirmAndProceed, nav
 
       const result = await response.json();
 
-      if (result.success && result.billUrl) {
-        alert("Bill generated successfully!\n\nOpen this link on another computer:\n" + result.billUrl);
-        window.open(result.billUrl, '_blank'); // optional
-      } else {
-        alert("Failed to generate the bill link.");
-      }
-
       onConfirmAndProceed(); // continue to final page
     } catch (error) {
       console.error("Error sending bill:", error);
