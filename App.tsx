@@ -79,17 +79,16 @@ const downloadBillAsText = async (
   formData.append('file', blob, filename);
 
   try {
-    const response = await fetch('/.netlify/functions/upload', {
+    const response = await fetch('/.netlify/functions/saveBill', {
       method: 'POST',
       body: formData,
     });
 
     const data = await response.json();
     console.log('Bill uploaded successfully:', data.url);
-    alert(`✅ Bill uploaded!\n📄 Access here:\n${data.url}`);
   } catch (error) {
     console.error('❌ Failed to upload bill:', error);
-    alert('Failed to upload the bill. Please check your server.');
+
   }
 };
 
