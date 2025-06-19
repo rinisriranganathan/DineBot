@@ -1,0 +1,10 @@
+
+{
+  "name": "firestore-menu-uploader",
+  "version": "1.0.0",
+  "main": "uploadMenu.js",
+  "dependencies": {
+    "firebase-admin": "^11.5.0",
+    "xlsx": "^0.18.5"
+  }
+}

@@ -18,7 +18,12 @@ interface FinalConfirmationPageProps {
 
 const OrderConfirmPage: React.FC<FinalConfirmationPageProps> = ({ orderData, onStartNewOrder, getItemNameWithPieces }) => {
   
-  const parsePrice = (priceString: string): number => parseFloat(priceString.replace('₹', ''));
+  const parsePrice = (price: string | number): number => {
+  if (typeof price === "number") return price;
+  if (typeof price === "string") return parseFloat(price.replace("₹", "").trim());
+  return 0; // fallback if price is undefined or invalid
+};
+
   const formatPrice = (priceNumber: number): string => `₹${priceNumber.toFixed(2)}`;
 
   return (

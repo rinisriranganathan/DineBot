@@ -1,0 +1,13 @@
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCXLswWwe0w86Zy\n4X9u4aR81YruW2ZI34gqYyBkxF1Bd2nMnsDezRE8DkYa+kIU8yOCWiqOQUDKQONb\nkFPbDoshLm+ddlSGIKxMh8pETtBl1tZxFjdbCzk3xPXF1FPzQQLLUFgHg6yjOQhN\nIdTMwdgLjw4eG89gMJgabxio+xnJHcJ2kCekRbS5cooPAHHhrzkZeisAWYl0dgPA\n6nGG8uz2+wgPVMqJKrsI5hAN+n0jn8NJAnN48tRBxEqnrosJEdDRLp3DNnDEyF77\npD7kBTf167g6Do73QUBg0KWv4gVJ611b6VYjLpeFlearE+KG3RXb83/uL44bTOIb\nId6TY5mBAgMBAAECggEAIhKzf6uMXDyFtp2Y/XIQguwT6F2kI2dxxm/Z5KwXAoK5\nzxq2iGB6cmkbJshhbVxRE/djYPVW916Bf2j7ZUMVW1CeakQ5j5M8kfEGxrdmo5U0\ndn9V0YipiCa1Z7VPiGMOEKmWdXcZSR44/z1ROyazHQPMYD/PULQTC94fFjKloJxi\nO+mCWBj1HP2MQNKLWNYzawMb4WATAC6Pp1n7NaVW4xaNpZNVs/3tshwqCY29JxIF\nDWcq23RG7vR/fBPb3COsFQpyY46KjqOfk2tbMb0fxdPPTKHk0PbM6zbS4r259b8L\nF+18zNkn7ODqmqAEqfz8CqjOilSjJo9hmKh6HyqEkwKBgQDJh/nlUaO8lLKOc/Z2\nZeDGyQ0Hado0lXDBNH0l5fHKSanA/M6HNahOwbhnCBd+k3S4ah15u+Sn+DX58tCy\nYQORK025LO1+kEEG01qW1RoS5WyHx8l3/HCu/YQXQhlut9H9nIcs4bzouCMB4y8a\nb8/zZwxDMYosbBo18GA3ELaVQwKBgQDACzKWfjeQwo/vSyj4AIHB478coSGaYn+0\nIClGijHjrVGKzY+2coOL2OpkjvWfXw4slRvlSOmPuYnERiCiunzN+2bnaX30HgLx\nU6luJqPrW+FYj9ocHwBn5SvHtZ9BxDbOZzt2v8kKC6EpTTMOTR2MHiSHIacmVjLI\nUDElLmFH6wKBgQCmRCXamOlCa1eJCYkcE19IAZVbOWyKF4TIEXryqmw6XV3M14W4\nrX8nQtHVRyrDBfq1Lu8UgPzby38UsMyXbkyYFybvkG58DZ1oeTTy3eu+DUPmHeFM\nuZtp88Rnv+PloYiA+QPY9oB5a3mOVBWHdRoWkTzfrt51WdaiC6gFpidMqwKBgA6y\nzLRoBKi3u3x9LC2PHF9SpxXx3ziJwWxv6bjUau0aHtuY0B8OtLLHb2ky5+nCxLr0\nzqXF5tpxQPIcy/Kog1TgoQelM1az1VXTKWyc2H7zEVRN7kuos8c/6xHl/MJz2h4C\nGLMGCsUSDsuydO3rSQ+oXvNYyApPHqPmP1yxKBDxAoGADe7RWDxoCTPcH8pD1/P+\nSZKiad+MNm0WU+cf0QLwHgsGDk5Nblkh7Y1hpKWY+u8POFGQnHoWcrDJMp8WDtH5\nq//m6gCwx6H3oto+jdhAgriOG+8pOVzYeZ9cMg+biNpm55t+eJPDXQ2ALX+7IoId\nAee4QrAfVQZq1EVrVeg9WbY=\n-----END PRIVATE KEY-----\n",
+  projectId: "restaurantbot-d88e6",
+  // ...other details from Firebase
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+export { db };

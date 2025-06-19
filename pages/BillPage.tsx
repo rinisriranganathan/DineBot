@@ -20,8 +20,36 @@ const BillPage: React.FC<BillPageProps> = ({ orderData, onConfirmAndProceed, nav
   const { items, subtotal, gstAmount, grandTotal, tableNumber } = orderData;
   const currentDate = new Date();
 
-  const parsePrice = (priceString: string): number => parseFloat(priceString.replace('₹', ''));
+  const parsePrice = (price: string | number): number => {
+  if (typeof price === "number") return price;
+  if (typeof price === "string") return parseFloat(price.replace("₹", "").trim());
+  return 0; // fallback if price is undefined or invalid
+};
+
   const formatPrice = (priceNumber: number): string => `₹${priceNumber.toFixed(2)}`;
+  const handleConfirmOrder = async () => {
+    try {
+      const response = await fetch('/.netlify/functions/saveBill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.billUrl) {
+        alert("Bill generated successfully!\n\nOpen this link on another computer:\n" + result.billUrl);
+        window.open(result.billUrl, '_blank'); // optional
+      } else {
+        alert("Failed to generate the bill link.");
+      }
+
+      onConfirmAndProceed(); // continue to final page
+    } catch (error) {
+      console.error("Error sending bill:", error);
+      alert("An error occurred while sending the bill.");
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl border border-[#BBD69D] flex flex-col">
@@ -100,7 +128,7 @@ const BillPage: React.FC<BillPageProps> = ({ orderData, onConfirmAndProceed, nav
               <span className="font-semibold text-sm">Back to Chat</span>
             </button>
             <button
-              onClick={onConfirmAndProceed}
+              onClick={handleConfirmOrder}
               className="bg-[#EDB403] text-[#1E2229] font-semibold py-2 px-3 sm:px-4 rounded-lg hover:bg-[#c9a002] focus:outline-none focus:ring-2 focus:ring-[#475424] focus:ring-opacity-75 transition-colors duration-150 text-sm"
               aria-label="Confirm order and proceed"
               disabled={items.length === 0}

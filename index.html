@@ -1,39 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Culinary Genie</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ✅ REMOVE Tailwind CDN (you’re using local Tailwind via npm) -->
+  <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+
+  <!-- ✅ Include compiled local Tailwind CSS -->
+
+  <!-- Custom scrollbar and animation styles -->
   <style>
-    /* Custom scrollbar for a more refined look with new palette */
     ::-webkit-scrollbar {
       width: 8px;
     }
     ::-webkit-scrollbar-track {
-      background: #BBD69D; /* NEW: PALE_GREEN */
+      background: #a8c784;
     }
     ::-webkit-scrollbar-thumb {
-      background: #EDB403; /* NEW: GOLDEN_YELLOW */
+      background: #EDB403;
       border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #475424; /* NEW: DARK_OLIVE_GREEN */
+      background: #475424;
     }
     #chat-container::-webkit-scrollbar {
-        width: 6px;
+      width: 6px;
     }
     #chat-container::-webkit-scrollbar-thumb {
-        background-color: #EDB403; /* NEW: GOLDEN_YELLOW */
-        border-radius: 3px;
+      background-color: #EDB403;
+      border-radius: 3px;
     }
     #chat-container::-webkit-scrollbar-track {
-        background-color: #BBD69D; /* NEW: PALE_GREEN */
+      background-color: #BBD69D;
     }
-
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.8; transform: scale(1.05); }
@@ -41,24 +48,25 @@
     .mic-listening-pulse {
       animation: pulse 1.5s infinite;
     }
-
   </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.5.1",
-    "@heroicons/react/": "https://esm.sh/@heroicons/react@^2.2.0/",
-    "react-wrap-balancer": "https://esm.sh/react-wrap-balancer@^1.1.1",
-    "xlsx": "https://esm.sh/xlsx@0.18.5"
+
+  <!-- ESM Import Map for External Libraries -->
+  <script type="importmap">
+  {
+    "imports": {
+      "react/": "https://esm.sh/react@^19.1.0/",
+      "react": "https://esm.sh/react@^19.1.0",
+      "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+      "@google/genai": "https://esm.sh/@google/genai@^1.5.1",
+      "@heroicons/react/": "https://esm.sh/@heroicons/react@^2.2.0/",
+      "react-wrap-balancer": "https://esm.sh/react-wrap-balancer@^1.1.1",
+      "xlsx": "https://esm.sh/xlsx@0.18.5"
+    }
   }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
+  </script>
 </head>
-<body class="bg-slate-100"> <!-- This comment is now accurate as App.tsx overrides it -->
+
+<body class="bg-slate-100">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

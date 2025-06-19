@@ -8,7 +8,11 @@ import WelcomePage from './pages/WelcomePage';
 import OrderConfirmPage from './pages/OrderConfirmPage';
 import { OrderItem, MenuItem } from './types';
 import { DEFAULT_MENU_ITEMS, GST_RATE } from './constants';
-import { parseMenuItemsFromExcel } from './utils/excelParser';
+// ✅ Only works if index.css is in the same folder
+import { db } from './firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
+
+
 
 export type Page = 'welcome' | 'chat' | 'bill' | 'finalConfirmation';
 
@@ -20,7 +24,12 @@ interface BillDataType {
   tableNumber: string;
 }
 
-const parsePrice = (priceString: string): number => parseFloat(priceString.replace('₹', ''));
+const parsePrice = (price: string | number): number => {
+  if (typeof price === "number") return price;
+  if (typeof price === "string") return parseFloat(price.replace("₹", "").trim());
+  return 0;
+};
+
 const formatPrice = (priceNumber: number): string => `₹${priceNumber.toFixed(2)}`;
 
 const getItemNameWithPiecesForBill = (item: OrderItem): string => {
@@ -95,53 +104,35 @@ const App: React.FC = () => {
   const [isMenuLoading, setIsMenuLoading] = useState<boolean>(true);
 
 
-  useEffect(() => {
-    const loadMenu = async () => {
-      setIsMenuLoading(true);
-      setMenuLoadingError(null);
+ useEffect(() => {
+  setIsMenuLoading(true);
+  setMenuLoadingError(null);
 
-      try {
-        const storedMenuJson = localStorage.getItem('fireFroastMenu');
-        if (storedMenuJson) {
-          const storedMenu = JSON.parse(storedMenuJson) as MenuItem[];
-          if (Array.isArray(storedMenu) && storedMenu.length > 0) {
-            setActiveMenuItems(storedMenu);
-            setIsMenuLoading(false);
-            console.log("Menu loaded from localStorage.");
-            return; 
-          }
-        }
-        console.log("No valid menu in localStorage, attempting to load from /menu.xlsx");
-        // Fetch menu.xlsx from the public path (root of the server)
-        const response = await fetch('/menu.xlsx');
-        if (!response.ok) {
-          throw new Error(`Failed to fetch menu.xlsx: ${response.statusText}. Please ensure 'menu.xlsx' is in the public root of your project.`);
-        }
-        const arrayBuffer = await response.arrayBuffer();
-        const parsedItems = await parseMenuItemsFromExcel(arrayBuffer);
-
-        if (parsedItems.length === 0) {
-          setMenuLoadingError("The menu.xlsx file is empty or invalid. Using default menu.");
-          setActiveMenuItems(DEFAULT_MENU_ITEMS);
-          localStorage.setItem('fireFroastMenu', JSON.stringify(DEFAULT_MENU_ITEMS));
-        } else {
-          setActiveMenuItems(parsedItems);
-          localStorage.setItem('fireFroastMenu', JSON.stringify(parsedItems));
-          console.log("Menu successfully loaded from /menu.xlsx and stored in localStorage.");
-        }
-      } catch (error) {
-        console.error("Error loading or parsing menu.xlsx:", error);
-        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred while loading the menu.";
-        setMenuLoadingError(`Failed to load menu from Excel file: ${errorMessage}. Using default built-in menu. Please ensure 'menu.xlsx' is correctly formatted and placed in the project root.`);
+  const unsubscribe = onSnapshot(collection(db, 'menu'), (snapshot) => {
+    try {
+      const items = snapshot.docs.map(doc => {
+  const data = doc.data() as Omit<MenuItem, 'id'>;
+  return { id: doc.id, ...data };
+});
+      if (items.length > 0) {
+        setActiveMenuItems(items);
+        localStorage.setItem('fireFroastMenu', JSON.stringify(items));
+        console.log("Menu loaded from Firebase and saved to localStorage.");
+      } else {
+        setMenuLoadingError("No menu items found in Firebase.");
         setActiveMenuItems(DEFAULT_MENU_ITEMS);
-        localStorage.setItem('fireFroastMenu', JSON.stringify(DEFAULT_MENU_ITEMS)); // Store default on error
-      } finally {
-        setIsMenuLoading(false);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch menu from Firebase:", err);
+      setMenuLoadingError("Something went wrong while fetching the menu.");
+      setActiveMenuItems(DEFAULT_MENU_ITEMS);
+    } finally {
+      setIsMenuLoading(false);
+    }
+  });
 
-    loadMenu();
-  }, []);
+  return () => unsubscribe(); // Stop listening when component unmounts
+}, []);
 
 
   const navigateTo = useCallback((page: Page) => {
@@ -431,6 +422,12 @@ const App: React.FC = () => {
       {!isFullScreenPage && <Footer />}
     </div>
   );
+  return (
+  <div className="bg-green-200 h-screen flex justify-center items-center">
+    <h1 className="text-4xl font-bold text-gray-800">Tailwind is Working!</h1>
+  </div>
+);
+
 };
 
 export default App;

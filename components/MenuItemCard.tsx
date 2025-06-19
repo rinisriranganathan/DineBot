@@ -27,7 +27,8 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, reason, onAddI
       />
       <div className="flex-grow min-w-0">
         <h3 className="text-sm sm:text-md font-semibold text-[#1E2229] truncate">{item.name}{pieceDisplay}</h3>
-        <p className="text-xs sm:text-sm font-bold text-[#EDB403]">{item.price}</p>
+        <p className="text-xs sm:text-sm font-bold text-[#EDB403]">₹{item.price}</p>
+
         {reason && (
           <p className="text-xs text-[#475424] mt-1 italic line-clamp-2">{reason}</p>
         )}
