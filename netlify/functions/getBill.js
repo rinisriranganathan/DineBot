@@ -2,6 +2,8 @@ const fs = require("fs");
 const path = require("path");
 
 exports.handler = async () => {
+  console.log("🔔 getBill function is loaded!");
+
   const filePath = path.join("/tmp", `latest.json`);
 
   if (!fs.existsSync(filePath)) {
