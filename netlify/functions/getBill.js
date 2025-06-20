@@ -1,22 +1,22 @@
-const fs = require("fs");
-const path = require("path");
+const admin = require("firebase-admin");
+const serviceAccount = require("../../serviceAccountKey.json");
+
+if (!admin.apps.length) {
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+}
+
+const db = admin.firestore();
 
 exports.handler = async () => {
-  console.log("🔔 getBill function is loaded!");
+  const doc = await db.collection("bills").doc("latest").get();
 
-  const filePath = path.join("/tmp", `latest.json`);
-
-  if (!fs.existsSync(filePath)) {
-    return {
-      statusCode: 404,
-      body: "No recent bill found."
-    };
+  if (!doc.exists) {
+    return { statusCode: 404, body: "No bill found." };
   }
 
-  const data = fs.readFileSync(filePath);
   return {
     statusCode: 200,
-    body: data.toString(),
+    body: JSON.stringify(doc.data(), null, 2),
     headers: { "Content-Type": "application/json" }
   };
 };
