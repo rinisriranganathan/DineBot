@@ -10,9 +10,6 @@ export const Footer: React.FC = () => {
         <p className="text-xs mt-1">
           Powered by Culinary Genie with Google Gemini API.
         </p>
-         <p className="text-xs mt-1">
-          Placeholder images from <a href="https://picsum.photos" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#EDB403]">Picsum Photos</a>. {/* Link hover: Golden Yellow */}
-        </p>
       </div>
     </footer>
   );
