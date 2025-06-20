@@ -8,14 +8,18 @@
   <h1>Your Bill</h1>
   <pre id="bill">Loading...</pre>
   <script>
-    fetch(`/.netlify/functions/getBill`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('bill').textContent = JSON.stringify(data, null, 2);
-      })
-      .catch(() => {
-        document.getElementById('bill').textContent = "Bill not found or expired.";
-      });
-  </script>
+  fetch("/.netlify/functions/getBill")
+    .then(res => {
+      if (!res.ok) throw new Error("No bill found");
+      return res.json();
+    })
+    .then(data => {
+      document.getElementById("bill").textContent = JSON.stringify(data, null, 2);
+    })
+    .catch(() => {
+      document.getElementById("bill").textContent = "Bill not found or expired.";
+    });
+</script>
+
 </body>
 </html>
