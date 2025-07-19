@@ -35,8 +35,6 @@ const getItemNameWithPiecesForBill = (item: OrderItem): string => {
     return `${item.name}${pieceInfo}${customizationInfo}`;
 };
 
-<<<<<<< HEAD
-=======
 const downloadBillAsText = async (
   tableNumber: number,
   items: OrderItem[],
@@ -52,6 +50,7 @@ const downloadBillAsText = async (
     second: '2-digit',
     hour12: true,
   });
+
   const timestampForFile = now.toISOString().replace(/[:.]/g, '-');
   const filename = `Fire_Froast_Table_${tableNumber}_Order_${timestampForFile}.txt`;
 
@@ -87,12 +86,11 @@ const downloadBillAsText = async (
     console.log('Bill uploaded successfully:', data.url);
   } catch (error) {
     console.error('❌ Failed to upload bill:', error);
-
   }
 };
 
 
->>>>>>> 8bd0f7f40a732350fae9b49a4d7141fe05551662
+
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('welcome');
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
