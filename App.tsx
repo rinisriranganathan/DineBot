@@ -6,15 +6,13 @@ import ChatPage from './pages/ChatPage';
 import BillPage from './pages/BillPage';
 import WelcomePage from './pages/WelcomePage';
 import OrderConfirmPage from './pages/OrderConfirmPage';
+import TableNumberPage from './pages/TableNumberPage';
 import { OrderItem, MenuItem } from './types';
 import { DEFAULT_MENU_ITEMS, GST_RATE } from './constants';
-// ✅ Only works if index.css is in the same folder
-import { db } from './firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from "./firebase"; // already set up
+import { collection, addDoc } from "firebase/firestore";
 
-
-
-export type Page = 'welcome' | 'chat' | 'bill' | 'finalConfirmation';
+export type Page = 'welcome' | 'tableNumberEntry' | 'chat' | 'bill' | 'finalConfirmation';
 
 interface BillDataType {
   items: OrderItem[];
@@ -24,10 +22,9 @@ interface BillDataType {
   tableNumber: string;
 }
 
-const parsePrice = (price: string | number): number => {
-  if (typeof price === "number") return price;
-  if (typeof price === "string") return parseFloat(price.replace("₹", "").trim());
-  return 0;
+const parsePrice = (priceString: string | number): number => {
+  if (typeof priceString === 'number') return priceString;
+  return parseFloat(priceString.replace('₹', '').trim());
 };
 
 const formatPrice = (priceNumber: number): string => `₹${priceNumber.toFixed(2)}`;
@@ -38,101 +35,63 @@ const getItemNameWithPiecesForBill = (item: OrderItem): string => {
     return `${item.name}${pieceInfo}${customizationInfo}`;
 };
 
-const downloadBillAsText = async (
-  tableNumber: number,
-  items: OrderItem[],
-  subtotal: number,
-  gstAmount: number,
-  grandTotal: number
-) => {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-IN');
-  const timeStr = now.toLocaleTimeString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  });
-  const timestampForFile = now.toISOString().replace(/[:.]/g, '-');
-  const filename = `Fire_Froast_Table_${tableNumber}_Order_${timestampForFile}.txt`;
-
-  let billContent = `🧾 Fire & Froast Bill\n`;
-  billContent += `Table No: ${tableNumber}\n`;
-  billContent += `----------------------\n`;
-
-  items.forEach(item => {
-    const itemName = getItemNameWithPiecesForBill(item);
-    const itemPrice = parsePrice(item.price);
-    const itemTotal = itemPrice * item.quantity;
-    billContent += `${item.quantity} x ${itemName} = ${formatPrice(itemTotal)}\n`;
-  });
-
-  billContent += `----------------------\n`;
-  billContent += `Subtotal: ${formatPrice(subtotal)}\n`;
-  billContent += `GST: ${formatPrice(gstAmount)}\n`;
-  billContent += `Total: ${formatPrice(grandTotal)}\n`;
-  billContent += `Time: ${dateStr}, ${timeStr}\n`;
-
-  const blob = new Blob([billContent], { type: 'text/plain;charset=utf-8' });
-
-  const formData = new FormData();
-  formData.append('file', blob, filename);
-
-  try {
-    const response = await fetch('/.netlify/functions/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    const data = await response.json();
-    console.log('Bill uploaded successfully:', data.url);
-    alert(`✅ Bill uploaded!\n📄 Access here:\n${data.url}`);
-  } catch (error) {
-    console.error('❌ Failed to upload bill:', error);
-    alert('Failed to upload the bill. Please check your server.');
-  }
-};
-
-
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('welcome');
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [currentBillData, setCurrentBillData] = useState<BillDataType | null>(null);
-  const [tableNumber, setTableNumber] = useState<string>('1');
+  const [tableNumber, setTableNumber] = useState<string>('');
   const [activeMenuItems, setActiveMenuItems] = useState<MenuItem[]>([]); // Initialize as empty, to be loaded
   const [menuLoadingError, setMenuLoadingError] = useState<string | null>(null);
   const [isMenuLoading, setIsMenuLoading] = useState<boolean>(true);
 
 
- useEffect(() => {
-  setIsMenuLoading(true);
-  setMenuLoadingError(null);
+  useEffect(() => {
+    const loadMenu = async () => {
+      setIsMenuLoading(true);
+      setMenuLoadingError(null);
 
-  const unsubscribe = onSnapshot(collection(db, 'menu'), (snapshot) => {
-    try {
-      const items = snapshot.docs.map(doc => {
-  const data = doc.data() as Omit<MenuItem, 'id'>;
-  return { id: doc.id, ...data };
-});
-      if (items.length > 0) {
-        setActiveMenuItems(items);
-        localStorage.setItem('fireFroastMenu', JSON.stringify(items));
-        console.log("Menu loaded from Firebase and saved to localStorage.");
-      } else {
-        setMenuLoadingError("No menu items found in Firebase.");
+      try {
+        const storedMenuJson = localStorage.getItem('fireFroastMenu');
+        if (storedMenuJson) {
+          const storedMenu = JSON.parse(storedMenuJson) as MenuItem[];
+          if (Array.isArray(storedMenu) && storedMenu.length > 0) {
+            setActiveMenuItems(storedMenu);
+            setIsMenuLoading(false);
+            console.log("Menu loaded from localStorage.");
+            return; 
+          }
+        }
+        console.log("No valid menu in localStorage, attempting to load from /menu.xlsx");
+        // Fetch menu.xlsx from the public path (root of the server)
+        const response = await fetch('/menu.xlsx');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch menu.xlsx: ${response.statusText}. Please ensure 'menu.xlsx' is in the public root of your project.`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        const parsedItems = await parseMenuItemsFromExcel(arrayBuffer);
+
+        if (parsedItems.length === 0) {
+          setMenuLoadingError("The menu.xlsx file is empty or invalid. Using default menu.");
+          setActiveMenuItems(DEFAULT_MENU_ITEMS);
+          localStorage.setItem('fireFroastMenu', JSON.stringify(DEFAULT_MENU_ITEMS));
+        } else {
+          setActiveMenuItems(parsedItems);
+          localStorage.setItem('fireFroastMenu', JSON.stringify(parsedItems));
+          console.log("Menu successfully loaded from /menu.xlsx and stored in localStorage.");
+        }
+      } catch (error) {
+        console.error("Error loading or parsing menu.xlsx:", error);
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred while loading the menu.";
+        setMenuLoadingError(`Failed to load menu from Excel file: ${errorMessage}. Using default built-in menu. Please ensure 'menu.xlsx' is correctly formatted and placed in the project root.`);
         setActiveMenuItems(DEFAULT_MENU_ITEMS);
+        localStorage.setItem('fireFroastMenu', JSON.stringify(DEFAULT_MENU_ITEMS)); // Store default on error
+      } finally {
+        setIsMenuLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to fetch menu from Firebase:", err);
-      setMenuLoadingError("Something went wrong while fetching the menu.");
-      setActiveMenuItems(DEFAULT_MENU_ITEMS);
-    } finally {
-      setIsMenuLoading(false);
-    }
-  });
+    };
 
-  return () => unsubscribe(); // Stop listening when component unmounts
-}, []);
+    loadMenu();
+  }, []);
 
 
   const navigateTo = useCallback((page: Page) => {
@@ -309,14 +268,19 @@ const App: React.FC = () => {
     });
   }, [getItemNameWithPieces, activeMenuItems]);
 
-  const navigateToChatFromWelcome = useCallback(() => {
+  const navigateToTableNumberEntryFromWelcome = useCallback(() => {
     if (isMenuLoading || activeMenuItems.length === 0) { // Prevent navigation if menu is still loading or empty
       setMenuLoadingError("Menu is still loading or not available. Please wait.");
       return;
     }
     setMenuLoadingError(null); // Clear any previous loading errors
-    navigateTo('chat');
+    navigateTo('tableNumberEntry');
   }, [navigateTo, isMenuLoading, activeMenuItems]);
+
+  const handleTableNumberSubmit = useCallback((tableNum: string) => {
+    setTableNumber(tableNum);
+    navigateTo('chat');
+  }, [navigateTo]);
 
   const handleCheckoutAndGoToBill = useCallback(() => {
     if (orderItems.length === 0) {
@@ -337,30 +301,61 @@ const App: React.FC = () => {
     return true;
   }, [orderItems, navigateTo, tableNumber, calculateSubtotal]); 
 
-  const handleConfirmOrderAndGoToFinalConfirmation = useCallback(() => {
-    if (currentBillData && currentBillData.items.length > 0) {
-      const tableNum = parseInt(currentBillData.tableNumber);
-      downloadBillAsText(
-        tableNum, 
-        currentBillData.items,
-        parsePrice(currentBillData.subtotal),
-        parsePrice(currentBillData.gstAmount),
-        parsePrice(currentBillData.grandTotal)
-      );
-      setOrderItems([]); 
-      navigateTo('finalConfirmation');
-    } else {
-      navigateTo('chat');
+const [isSubmitting, setIsSubmitting] = useState(false);
+
+const handleConfirmOrderAndGoToFinalConfirmation = useCallback(async () => {
+  if (isSubmitting) return; // prevent duplicate calls
+  if (
+    currentBillData &&
+    currentBillData.items.length > 0 &&
+    !isNaN(Number(currentBillData.subtotal)) &&
+    !isNaN(Number(currentBillData.gstAmount)) &&
+    !isNaN(Number(currentBillData.grandTotal))
+  ) {
+    setIsSubmitting(true);
+    try {
+      const cleanedItems = currentBillData.items.map(item => {
+        const cleanedItem = { ...item };
+        if (cleanedItem.customizationNotes === undefined) {
+          delete cleanedItem.customizationNotes;
+        }
+        return cleanedItem;
+      });
+
+      await addDoc(collection(db, "bills"), {
+        ...currentBillData,
+        items: cleanedItems,
+        status: "pending",
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log("✅ Bill sent to Firebase.");
+      setOrderItems([]);
+      navigateTo("finalConfirmation");
+    } catch (error) {
+      console.error("❌ Failed to send bill to Firebase:", error);
+      alert("Failed to send order to kitchen.");
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [navigateTo, currentBillData]);
+  } else {
+    console.warn("⚠️ Skipped bill submission due to invalid or incomplete data.", currentBillData);
+    navigateTo("finalConfirmation") // fallback
+  }
+}, [currentBillData, navigateTo, isSubmitting]);
 
+
+
+
+  const isFullScreenPage = currentPage === 'welcome' || currentPage === 'finalConfirmation' || currentPage === 'tableNumberEntry';
+  const appBgColor = isFullScreenPage ? 'bg-[#BBD69D]' : 'bg-[#F5F0E5]';
   const handleStartNewOrderFromFinalConfirmation = useCallback(() => {
-    setCurrentBillData(null); 
-    navigateTo('welcome');
-  }, [navigateTo]);
+  setCurrentBillData(null);
+  setOrderItems([]);
+  setTableNumber('');
+  navigateTo('welcome');
+}, [navigateTo]);
 
-  const isFullScreenPage = currentPage === 'welcome' || currentPage === 'finalConfirmation';
-  const appBgColor = (currentPage === 'welcome' || currentPage === 'finalConfirmation') ? 'bg-[#BBD69D]' : 'bg-[#F5F0E5]';
 
   return (
     <div className={`min-h-screen flex flex-col ${appBgColor} text-[#1E2229]`}>
@@ -374,10 +369,13 @@ const App: React.FC = () => {
       >
         {currentPage === 'welcome' && (
           <WelcomePage 
-            onStartExploring={navigateToChatFromWelcome}
+            onStartExploring={navigateToTableNumberEntryFromWelcome}
             menuLoadingError={menuLoadingError} // For displaying initial load errors
             isMenuLoading={isMenuLoading} // For disabling start button if menu not ready
           />
+        )}
+        {currentPage === 'tableNumberEntry' && (
+          <TableNumberPage onTableNumberSubmit={handleTableNumberSubmit} />
         )}
         {currentPage === 'chat' && !isMenuLoading && activeMenuItems.length > 0 && (
           <ChatPage
@@ -422,12 +420,6 @@ const App: React.FC = () => {
       {!isFullScreenPage && <Footer />}
     </div>
   );
-  return (
-  <div className="bg-green-200 h-screen flex justify-center items-center">
-    <h1 className="text-4xl font-bold text-gray-800">Tailwind is Working!</h1>
-  </div>
-);
-
 };
 
 export default App;

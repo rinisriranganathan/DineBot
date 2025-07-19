@@ -147,7 +147,7 @@ If user asks for the full menu:
 `;
 
   const chat = ai.chats.create({ 
-    model: 'gemini-2.5-flash-preview-04-17',
+    model: 'gemini-2.5-flash',
     config: {
       systemInstruction: systemInstructionString,
       temperature: 0.6,
@@ -158,15 +158,56 @@ If user asks for the full menu:
   return chat;
 };
 
-const cleanJsonString = (jsonStr: string): string => {
-    let clean = jsonStr.trim();
+const cleanJsonString = (textFollowingMarker: string): string => {
+    let clean = textFollowingMarker.trimStart(); // Trim leading whitespace
+
+    // 1. Handle markdown fences first (e.g., ```json ... ```)
     const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/s;
     const fenceMatch = clean.match(fenceRegex);
     if (fenceMatch && fenceMatch[1]) {
-        clean = fenceMatch[1].trim();
+        clean = fenceMatch[1].trim(); // Content inside fences
     }
-    return clean;
+    // At this point, 'clean' is either the content within fences or the raw text after marker (trimmed start).
+    // It might still have trailing non-JSON text if not fenced.
+
+    // 2. Isolate the first complete JSON object or array
+    let isolatedJson = "";
+    if (clean.startsWith('[')) {
+        let balance = 0;
+        for (let i = 0; i < clean.length; i++) {
+            if (clean[i] === '[') balance++;
+            else if (clean[i] === ']') balance--;
+            if (balance === 0 && clean[i] === ']') {
+                isolatedJson = clean.substring(0, i + 1);
+                break;
+            }
+        }
+    } else if (clean.startsWith('{')) {
+        let balance = 0;
+        for (let i = 0; i < clean.length; i++) {
+            if (clean[i] === '{') balance++;
+            else if (clean[i] === '}') balance--;
+            if (balance === 0 && clean[i] === '}') {
+                isolatedJson = clean.substring(0, i + 1);
+                break;
+            }
+        }
+    } else {
+        // Does not start with [ or {, so it's not valid JSON to begin with for our markers
+        return ""; 
+    }
+    
+    // Validate if the isolated string is indeed parseable JSON
+    try {
+        JSON.parse(isolatedJson);
+        return isolatedJson; // Return if parseable
+    } catch (e) {
+        // If parsing fails even after isolation, it's malformed.
+        // console.warn("Isolated string is not valid JSON:", isolatedJson, e);
+        return ""; // Return empty if not valid JSON
+    }
 };
+
 
 export const sendMessageToBot = async (
   chat: Chat, 
@@ -198,11 +239,12 @@ export const sendMessageToBot = async (
         checkoutIntentFlag = true;
     } else if (orderIntentMarkerIndex !== -1) {
       conversationalText = rawText.substring(0, orderIntentMarkerIndex).trim();
-      const jsonString = rawText.substring(orderIntentMarkerIndex + ORDER_INTENT_MARKER.length).trim();
-      if (jsonString) {
+      const textAfterMarker = rawText.substring(orderIntentMarkerIndex + ORDER_INTENT_MARKER.length);
+      const isolatedJsonString = cleanJsonString(textAfterMarker);
+      
+      if (isolatedJsonString) {
         try {
-          const cleanedJson = cleanJsonString(jsonString);
-          const parsedJson = JSON.parse(cleanedJson);
+          const parsedJson = JSON.parse(isolatedJsonString);
           if (Array.isArray(parsedJson) && parsedJson.every(item => 
               item && typeof item.itemName === 'string' && 
               (typeof item.quantity === 'number' || item.quantity === undefined) &&
@@ -214,21 +256,22 @@ export const sendMessageToBot = async (
               customizationNotes: item.customizationNotes
             }));
           } else {
-            console.warn("Parsed JSON for order intent is not an array of the expected format:", parsedJson, "From string:", cleanedJson);
-            conversationalText += ` (Order processing issue with: ${jsonString.substring(0,30)}...)`;
+            console.warn("Parsed JSON for order intent is not an array of the expected format:", parsedJson, "From string:", isolatedJsonString);
+            conversationalText += ` (Order processing issue with: ${isolatedJsonString.substring(0,30)}...)`;
           }
         } catch (e) {
-          console.error("Failed to parse order intent JSON:", e, "JSON string:", jsonString, "Raw bot text:", rawText);
-          conversationalText += ` (Order processing error: ${jsonString.substring(0,30)}...)`;
+          console.error("Failed to parse order intent JSON:", e, "JSON string:", isolatedJsonString, "Raw bot text:", rawText);
+          conversationalText += ` (Order processing error: ${isolatedJsonString.substring(0,30)}...)`;
         }
       }
     } else if (removeIntentMarkerIndex !== -1) { 
       conversationalText = rawText.substring(0, removeIntentMarkerIndex).trim();
-      const jsonString = rawText.substring(removeIntentMarkerIndex + REMOVE_INTENT_MARKER.length).trim();
-      if (jsonString) {
+      const textAfterMarker = rawText.substring(removeIntentMarkerIndex + REMOVE_INTENT_MARKER.length);
+      const isolatedJsonString = cleanJsonString(textAfterMarker);
+
+      if (isolatedJsonString) {
         try {
-          const cleanedJson = cleanJsonString(jsonString);
-          const parsedJson = JSON.parse(cleanedJson);
+          const parsedJson = JSON.parse(isolatedJsonString);
            if (Array.isArray(parsedJson) && parsedJson.every(item => 
               item && typeof item.itemName === 'string' && 
               (typeof item.quantity === 'number' || item.quantity === undefined) &&
@@ -240,30 +283,31 @@ export const sendMessageToBot = async (
               customizationNotes: item.customizationNotes
             }));
           } else {
-            console.warn("Parsed JSON for remove intent is not an array of the expected format:", parsedJson, "From string:", cleanedJson);
-            conversationalText += ` (Remove processing issue with: ${jsonString.substring(0,30)}...)`;
+            console.warn("Parsed JSON for remove intent is not an array of the expected format:", parsedJson, "From string:", isolatedJsonString);
+            conversationalText += ` (Remove processing issue with: ${isolatedJsonString.substring(0,30)}...)`;
           }
         } catch (e) {
-          console.error("Failed to parse remove intent JSON:", e, "JSON string:", jsonString, "Raw bot text:", rawText);
-          conversationalText += ` (Remove processing error: ${jsonString.substring(0,30)}...)`;
+          console.error("Failed to parse remove intent JSON:", e, "JSON string:", isolatedJsonString, "Raw bot text:", rawText);
+          conversationalText += ` (Remove processing error: ${isolatedJsonString.substring(0,30)}...)`;
         }
       }
     } else if (suggestionMarkerIndex !== -1) {
       conversationalText = rawText.substring(0, suggestionMarkerIndex).trim();
-      const jsonString = rawText.substring(suggestionMarkerIndex + SUGGESTION_MARKER.length).trim();
-      if (jsonString) {
+      const textAfterMarker = rawText.substring(suggestionMarkerIndex + SUGGESTION_MARKER.length);
+      const isolatedJsonString = cleanJsonString(textAfterMarker);
+
+      if (isolatedJsonString) {
         try {
-          const cleanedJson = cleanJsonString(jsonString);
-          const parsedJson = JSON.parse(cleanedJson);
+          const parsedJson = JSON.parse(isolatedJsonString);
           if (Array.isArray(parsedJson) && parsedJson.every(item => typeof item.id === 'string' && typeof item.reason === 'string')) {
             suggestions = parsedJson as SuggestedItem[];
           } else {
-            console.warn("Parsed JSON for suggestions is not in the expected format:", parsedJson, "From string:", cleanedJson);
+            console.warn("Parsed JSON for suggestions is not in the expected format:", parsedJson, "From string:", isolatedJsonString);
             conversationalText += " (Suggestion format issue.)";
           }
         } catch (e) {
-          console.error("Failed to parse suggestions JSON:", e, "JSON string:", jsonString, "Raw bot text:", rawText);
-          conversationalText += ` (Suggestion format issue: ${jsonString.substring(0,30)}...)`;
+          console.error("Failed to parse suggestions JSON:", e, "JSON string:", isolatedJsonString, "Raw bot text:", rawText);
+          conversationalText += ` (Suggestion format issue: ${isolatedJsonString.substring(0,30)}...)`;
         }
       }
     }

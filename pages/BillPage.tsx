@@ -2,6 +2,9 @@
 import React from 'react';
 import { OrderItem, MenuItem } from '../types';
 import { GST_RATE } from '../constants'; // Import GST_RATE
+import { collection, addDoc } from "firebase/firestore";
+import { db } from '../firebase'; // adjust path if needed
+
 
 interface BillPageProps {
   orderData: {
@@ -28,28 +31,40 @@ const BillPage: React.FC<BillPageProps> = ({ orderData, onConfirmAndProceed, nav
 
   const formatPrice = (priceNumber: number): string => `₹${priceNumber.toFixed(2)}`;
   const handleConfirmOrder = async () => {
-    try {
-      const response = await fetch('/.netlify/functions/saveBill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData),
-      });
+  const parsedItems = items.map(item => ({
+    id: item.id,
+    name: getItemNameWithPieces(item), // includes customization details
+    quantity: item.quantity,
+    price: item.price,
+    customizationNotes: item.customizationNotes || '',
+  }));
+  const calculatedSubtotal = parsedItems.reduce((sum, item) => {
+    return sum + item.quantity * parsePrice(item.price);
+  }, 0);
 
-      const result = await response.json();
+  const calculatedGst = calculatedSubtotal * GST_RATE;
+  const calculatedGrandTotal = calculatedSubtotal + calculatedGst;
 
-      if (result.success && result.billUrl) {
-        alert("Bill generated successfully!\n\nOpen this link on another computer:\n" + result.billUrl);
-        window.open(result.billUrl, '_blank'); // optional
-      } else {
-        alert("Failed to generate the bill link.");
-      }
-
-      onConfirmAndProceed(); // continue to final page
-    } catch (error) {
-      console.error("Error sending bill:", error);
-      alert("An error occurred while sending the bill.");
-    }
+  const bill = {
+    items: parsedItems,
+    subtotal: Number(calculatedSubtotal.toFixed(2)),
+    gstAmount: Number(calculatedGst.toFixed(2)),
+    grandTotal: Number(calculatedGrandTotal.toFixed(2)),
+    tableNumber,
+    timestamp: new Date().toISOString(),
+    status: "pending"
   };
+
+  try {
+    await addDoc(collection(db, "bills"), bill);
+    alert("✅ Order sent to kitchen!");
+    onConfirmAndProceed(); // Continue to final page
+  } catch (error) {
+    console.error("❌ Error sending bill:", error);
+    alert("Failed to send the bill to the kitchen.");
+  }
+};
+
 
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl border border-[#BBD69D] flex flex-col">
