@@ -45,6 +45,7 @@ const BillPage: React.FC<BillPageProps> = ({ orderData, onConfirmAndProceed, nav
   const calculatedGst = calculatedSubtotal * GST_RATE;
   const calculatedGrandTotal = calculatedSubtotal + calculatedGst;
 
+<<<<<<< HEAD
   const bill = {
     items: parsedItems,
     subtotal: Number(calculatedSubtotal.toFixed(2)),
@@ -53,6 +54,13 @@ const BillPage: React.FC<BillPageProps> = ({ orderData, onConfirmAndProceed, nav
     tableNumber,
     timestamp: new Date().toISOString(),
     status: "pending"
+=======
+      onConfirmAndProceed(); // continue to final page
+    } catch (error) {
+      console.error("Error sending bill:", error);
+      alert("An error occurred while sending the bill.");
+    }
+>>>>>>> 8bd0f7f40a732350fae9b49a4d7141fe05551662
   };
 
   try {

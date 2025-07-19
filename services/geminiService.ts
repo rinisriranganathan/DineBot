@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, GenerateContentResponse, Chat, Part } from "@google/genai";
 import { SuggestedItem, MenuItemForPrompt } from '../types';
 

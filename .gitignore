@@ -25,4 +25,8 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+<<<<<<< HEAD
 serviceAccountKey.json 
+=======
+serviceAccountKey.json
+>>>>>>> 8bd0f7f40a732350fae9b49a4d7141fe05551662

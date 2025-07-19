@@ -35,6 +35,64 @@ const getItemNameWithPiecesForBill = (item: OrderItem): string => {
     return `${item.name}${pieceInfo}${customizationInfo}`;
 };
 
+<<<<<<< HEAD
+=======
+const downloadBillAsText = async (
+  tableNumber: number,
+  items: OrderItem[],
+  subtotal: number,
+  gstAmount: number,
+  grandTotal: number
+) => {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN');
+  const timeStr = now.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  });
+  const timestampForFile = now.toISOString().replace(/[:.]/g, '-');
+  const filename = `Fire_Froast_Table_${tableNumber}_Order_${timestampForFile}.txt`;
+
+  let billContent = `🧾 Fire & Froast Bill\n`;
+  billContent += `Table No: ${tableNumber}\n`;
+  billContent += `----------------------\n`;
+
+  items.forEach(item => {
+    const itemName = getItemNameWithPiecesForBill(item);
+    const itemPrice = parsePrice(item.price);
+    const itemTotal = itemPrice * item.quantity;
+    billContent += `${item.quantity} x ${itemName} = ${formatPrice(itemTotal)}\n`;
+  });
+
+  billContent += `----------------------\n`;
+  billContent += `Subtotal: ${formatPrice(subtotal)}\n`;
+  billContent += `GST: ${formatPrice(gstAmount)}\n`;
+  billContent += `Total: ${formatPrice(grandTotal)}\n`;
+  billContent += `Time: ${dateStr}, ${timeStr}\n`;
+
+  const blob = new Blob([billContent], { type: 'text/plain;charset=utf-8' });
+
+  const formData = new FormData();
+  formData.append('file', blob, filename);
+
+  try {
+    const response = await fetch('/.netlify/functions/saveBill', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    console.log('Bill uploaded successfully:', data.url);
+  } catch (error) {
+    console.error('❌ Failed to upload bill:', error);
+
+  }
+};
+
+
+>>>>>>> 8bd0f7f40a732350fae9b49a4d7141fe05551662
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('welcome');
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);

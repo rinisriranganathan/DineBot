@@ -19,9 +19,14 @@
     "xlsx": "0.18.5"
   },
   "devDependencies": {
+<<<<<<< HEAD
     "@tailwindcss/postcss": "^4.1.11",
     "@types/node": "^22.14.0",
     "@types/react": "^19.1.8",
+=======
+    "@tailwindcss/postcss": "^4.1.10",
+    "@types/node": "^22.14.0",
+>>>>>>> 8bd0f7f40a732350fae9b49a4d7141fe05551662
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.10",

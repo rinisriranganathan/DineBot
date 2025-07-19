@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Your Bill</title>
+</head>
+<body>
+  <h1>Latest Bill</h1>
+  <pre id="bill">Loading...</pre>
+
+  <script>
+    fetch("/.netlify/functions/getBill")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch");
+        return res.json();
+      })
+      .then((data) => {
+        document.getElementById("bill").textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(() => {
+        document.getElementById("bill").textContent = "Bill not found.";
+      });
+  </script>
+</body>
+</html>
