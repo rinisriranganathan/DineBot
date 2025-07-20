@@ -61,14 +61,14 @@ const BillPage: React.FC<BillPageProps> = ({ orderData, onConfirmAndProceed, nav
     }
   };
 
-  try {
-    await addDoc(collection(db, "bills"), bill);
-    alert("✅ Order sent to kitchen!");
-    onConfirmAndProceed(); // Continue to final page
-  } catch (error) {
-    console.error("❌ Error sending bill:", error);
-    alert("Failed to send the bill to the kitchen.");
-  }
+ try {
+  // Your existing code
+  status: "pending";
+  onConfirmAndProceed(); // continue to final page
+} catch (error) {
+  console.error("Error sending bill:", error);
+}
+
 };
 
 
